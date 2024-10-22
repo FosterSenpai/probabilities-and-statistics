@@ -1,17 +1,19 @@
 ---
 title: "Foster Rae, An Analysis of Popular Video Games (1980 - 2023)"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ## Introduction
 
-In this analysis, we will explore trends and insights from the data-set "Popular Video Games 1980 - 2023." We aim to uncover patterns and answer key questions about the video game industry.
+In this analysis, we will **explore trends and insights** from the data-set "Popular Video Games 1980 - 2023." We aim to uncover patterns and answer key questions about the video game industry.
 
-#### About the Data-set
+### About the Data-set
 
-This data-set contains information about popular video games from 1980 to 2023. It was obtained by scraping data from the website [backloggd](https://www.backloggd.com).
+This data-set contains **information about popular video games** from 1980 to 2023. It was obtained by scraping data from the website [backloggd](https://www.backloggd.com).
 
-The data-set contains **over** **1000** **unique** **video** **games**, each with various attributes. It includes 14 columns of data, such as the title, rating, release date, genres, etc.
+The **data-set contains over 1000 unique video games**, each with various attributes. It includes **14 columns of data**, such as the title, rating, release date, genres, etc.
 
 #### Data-set Citation
 
@@ -73,9 +75,9 @@ data <- data %>%
 
 ```
 
-#### First Looks
+### First Looks
 
-After tidying up a bit, we can now take a look at the **head** (first 6 rows) of the data-set to get a better understanding of what we are working with.
+After tidying up a bit, we can now take a **look at the head** of the data-set to get a better understanding of what we are working with.
 
 ```{r}
 
@@ -91,9 +93,11 @@ We are left with eight features (columns) to describe a single video game.
 
 ***Data Frame Layout***
 
-|  |  |  |  |  |  |  |
-|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
-| **Title** *\<chr\>* | **Rating** *\<dbl\>* | **Release Date** *\<chr\>* | **Genres** *\<chr\>* | **Team** *\<chr\>* | **Number of Reviews** *\<chr\>* | **Wishlist** *\<chr\>* |
+|                     |                      |                            |                      |                    |                                 |                        |                 |
+|---------|---------|---------|---------|---------|---------|---------|---------|
+| **Title** *\<chr\>* | **Rating** *\<dbl\>* | **Release Date** *\<chr\>* | **Genres** *\<chr\>* | **Team** *\<chr\>* | **Number of Reviews** *\<chr\>* | **Wishlist** *\<chr\>* | **X** *\<int\>* |
+
+### Data Conversions
 
 These features will offer some great insights, but all of the data is in a character format, even values that should be numbers. We will need to convert some of the columns to a more appropriate format for analysis.
 
@@ -102,8 +106,6 @@ These features will offer some great insights, but all of the data is in a chara
 -   Number of Reviews to integer format.
 
 -   Wishlist to integer Format.
-
-#### Data Conversions
 
 ```{r}
 
@@ -133,9 +135,9 @@ data$Release.Date <- as.Date(data$Release.Date, format = "%b %d, %Y")
 
 ```
 
-#### Checking for Duplicate Samples & Invalid or Missing Values
+### Checking for Duplicate Samples & Invalid Values
 
-Before any sort of real analysis, we will have a look to see if there are any missing or weird values in the data-set and handle them.
+**Before** any sort of real analysis, we will have a look to see if there are any **missing or weird values** in the data-set and handle them.
 
 Things like a negative rating or a release date in the future or the same video games listed twice.
 
@@ -173,7 +175,7 @@ rm(na_counts, na_cols)
 
 ```
 
-After our check, we can see that 13 values in the 'Rating' col and 3 cols in the 'Release.Date' col are NA, compared to our over 1000 samples this is a pretty small part of the data, so we should be able to just remove any samples with NA values and still have a decent sized data set.
+After our check, we can see that 13 values in the 'Rating' col and 3 cols in the 'Release.Date' col are **NA**, compared to our over 1000 samples this is a pretty small part of the data, so we should be able to just **remove any samples with NA values** and still have a decent sized data set.
 
 ```{r}
 
@@ -235,9 +237,17 @@ rm(invalid_ratings, future_dates, no_reviews)
 
 After all our checks and cleaning, the data set is now ready for some analysis.
 
-## Data Exploration
+I first like to define a few **main problems or questions** that I want to answer with the data-set. This will help guide the analysis and keep me focused on the most important insights.
 
-First we will take a look at the summary of our data.
+### Main Questions
+
+-   What has been the most popular genre for each decade?
+-   Is there a pattern or trend in the most popular game genre over time?, if so can i predict the popular genres for next year?
+-   Are there any dev teams that consistently produce highly rated games?
+
+### Data Exploration
+
+First we will take a look at the summary of our data. Then a deeper look into each feature(column).
 
 ```{r}
 
@@ -250,7 +260,7 @@ summary(data)
 -   **Number of Reviews**: Ranges widely from 8 to 4300, with a mean of 612.3.
 -   **Wishlist**: Ranges from 2 to 4800, indicating varied interest levels.
 
-#### Ratings Visualizations
+#### Rating Analysis
 
 ```{r}
 
@@ -282,11 +292,57 @@ ggplot(data, aes(y = Rating)) +
 
 -   The points/outliers on the box plot are all games with ratings below 2.0, these could be interesting to look at.
 
-###### Ratings Visualizations Conclusion
+From our box and histogram plots we can see that **most games are rated between 3.4 and 4.0**, with a few outliers below 2.0. We can take a closer look at these games to see if there are any commonalities to find out why they are rated so low, are they in the same genre ?
 
-From our box and histogram plots we can see that most games are rated between 3.4 and 4.0, with a few outliers below 2.0. We can take a closer look at these games to see if there are any commonalities to find out why they are rated so low.
+##### Looking at the low outliers
 
-#### Trends Over Time
+```{r}
+
+# Find games with ratings below 2.5
+low_rated_games <- data %>%
+  filter(Rating < 2.5)
+
+# Display the low rated games
+print(low_rated_games)
+```
+
+Okay firstly, RIP league hahaha.
+
+Secondly, i can tell that these ratings are from users rather than critics, as league of legends is rated highly by things like metacritic and IGN. (and hated even by people that love the game)
+
+\
+![League Ratings Screenshot](Resources/Images/Screenshot.png){width="267"}
+
+I don't know all of these games, but i know most of them and the ones i do know, i would probably rate similarly to the users here.
+
+Let's see if there is anything in common between these games.
+
+```{r}
+# Check for common genres among low rated games
+low_rated_genres <- low_rated_games %>%
+  count(Genres) %>%
+  arrange(desc(n))
+
+print(head(low_rated_genres, 5))
+
+# Check for common developers among low rated games
+low_rated_teams <- low_rated_games %>%
+  count(Team) %>%
+  arrange(desc(n))
+
+print(head(low_rated_teams, 5))
+
+rm(low_rated_genres, low_rated_teams, low_rated_games)
+
+```
+
+-   The genres are all over the place, most games seem to think they're adventure games.
+-   The most common genre is 'Shooter' with 5 games that range in release date widely from 1999 - 2022, **suggesting that the genre is not the issue**.
+-   It looks like Sega and Sonic have not been doing too well in recent years, with 3 Sonic games in the list.
+-   Another dev team 'Euphoric Brothers', seems to have doubled down on their low rated game 'Garten of Banban', releasing a sequel in just two months but it seems to have flopped as well.
+-   Other than that there is **no real commonality between the games**.
+
+##### Rating Trends Over Time
 
 ```{r}
 
@@ -296,74 +352,316 @@ ratings_over_years <- data %>%
   group_by(Year) %>%
   summarise(Average_Rating = mean(Rating, na.rm = TRUE))
 
+# Calculate the average ratings over the decades
+ratings_over_years$Decade <- as.numeric(substr(ratings_over_years$Year, 1, 3)) * 10
+ratings_over_decades <- ratings_over_years %>%
+  group_by(Decade) %>%
+  summarise(Average_Rating = mean(Average_Rating, na.rm = TRUE))
+
+# Plot the average ratings over the decades
+ggplot(ratings_over_decades, aes(x = Decade, y = Average_Rating, group = 1)) + 
+  geom_line(color = wes_palette("Royal1")[4]) +
+  geom_point(color = wes_palette("Royal1")[1]) +
+  labs(title = "Average Ratings Over the Decades", x = "Decade", y = "Average Rating") +
+  theme_minimal() +
+  scale_y_continuous(limits = c(3, 4))
+
+```
+
+As we can see, **the average rating of games has been increasing over the years**, with a slight dip in the 2010s.
+
+The 80s were apparently not a great time for video games, but the 90s saw a significant increase in the average rating of games.\
+I assume this is due to the jump in technology and the ability to make more complex games with systems like the PS1 and N64 coming out this decade, and the move from actual arcades to being able to play games at home.
+
+Lets take a closer look at the average rating of each year.
+
+```{r}
+
 # Plot the average ratings over the years
 ggplot(ratings_over_years, aes(x = Year, y = Average_Rating, group = 1)) +
   geom_line(color = wes_palette("Royal1")[4]) +
-  geom_point(color = wes_palette("Royal1")[3]) +
+  geom_point(color = wes_palette("Royal1")[1]) +
   labs(title = "Average Ratings Over the Years", x = "Year", y = "Average Rating")+
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+# Free up memory
+rm(ratings_over_years, ratings_over_decades)
+
 ```
 
--   Analysis of ratings over the years
+We can literally see a spike in 1994, which i believe is due to the release of the PS1.
 
--   Trends in the number of reviews More reviews = more popular?
+But what happened in 1987 that caused the average rating to drop so much?, Let's take a look.
 
-##### Visualizations
+```{r}
 
-**Ratings Over Years**: Line graph showing how video game ratings change over time, with the x-axis as the release date and the y-axis as the ratings.
+# Print the games released in 1987
+games_1987 <- data %>%
+  filter(format(Release.Date, "%Y") == "1987")
 
-**Number of Reviews Over Time**: Line graph highlighting the number of reviews over the years, with the x-axis as the release date and the y-axis as the number of reviews.
+print(games_1987)
+rm(games_1987)
+
+```
+
+These three games are generally large franchises that are still around today, so it's interesting to see that they were not well received when they first came out.
+
+**The 1983 Video Game Crash**
+
+From my research, I found that **the video game industry crashed in 1983** due to a combination of factors, including the saturation of the market with low-quality games, competition from personal computers, and a lack of consumer confidence. This could explain the low ratings of games released in 1987, as the industry was still recovering from the crash. We can see the average rating sharply drop from 1982 to 1987 which i believe is a reflection of this crash.
+
+The rise back up in the 90s is due to, like i said earlier, the jump in technology and the ability to make more complex games with systems.
 
 #### Genre Analysis
 
--   List of top genres, ordered by ratings of games in the genre
--   Genre with the most games
--   Genre with the highest average rating
--   What genre was most popular in each time period? What were they making more of? what was getting the highest ratings?
+First we will take a look at which genres have the **highest and lowest average ratings**.
 
-##### Visualizations
+```{r}
 
--   **Top Genres by Rating**: Bar graph depicting the average rating for each genre, with genres on the x-axis and average rating on the y-axis.
+# Calculate the average rating and count of games for each genre
+average_ratings_by_genre <- data %>%
+  separate_rows(Genres, sep = ", ") %>%
+  mutate(Genres = gsub("\\[|\\]|'", "", Genres)) %>%
+  filter(Genres != "") %>%
+  group_by(Genres) %>%
+  summarise(Average_Rating = mean(Rating, na.rm = TRUE),
+            Count = n()) %>%
+  arrange(desc(Average_Rating))
 
--   **Genres Over Time**: Stacked bar graph (histogram) showing the popularity of each genre over time, with the x-axis as the release date and the y-axis as the proportion of each genre
+# Print 5 highest rated genres with counts
+print(head(average_ratings_by_genre, 5))
+
+# Print 5 lowest rated genres with counts
+print(tail(average_ratings_by_genre, 5))
+
+```
+
+###### Highest Rated Genres
+
+Surprisingly the highest rated genre is 'Visual Novel', i would have thought it would be something like 'RPG' or 'Shooter' but i guess people really like their visual novels.\
+Even the counts of games in the genre is decent so its not like the average is skewed by a few games, they are generally well received.
+
+Turn Based Strategy being second isn't very surprising, i love me some XCOM and Civilization so i can see why they are rated so highly.
+
+RPG being the third highest rated genre is not surprising, as RPG's are generally well received by critics and players alike, though i expected it to be higher than Turn Based Strategy.\
+With 358 RPG games in the data-set, and an average rating of 3.77, it seems like **the genre is consistently popular and well-received**.
+
+###### Lowest Rated Genres
+
+MOBA being the lowest rated genre is not surprising, as MOBA's are generally very competitive and can be toxic, which can lead to a bad experience for players.\
+There are only 2 MOBA games in the data-set, so **the average rating may not be representative of the genre as a whole**.
+
+The second lowest rated genre is Quiz/Trivia, which is not surprising as these games can be very niche and may not appeal to a wide audience.\
+I don't remember the last time i played a quiz game, i think it was the Buzz series on the PS2.
+
+The third lowest is 'Fighting' which is surprising to me, as i would have thought it would be higher, with games like Mortal Kombat and Tekken being so popular. \
+Even games like Super Smash Bros. & the DBZ games are generally well received, so I'm not sure why the genre is rated so low. It could be that the genre is over saturated with low-quality games, or maybe its the same issue as MOBA's, where the competitive nature of the games can lead to a bad experience for players.
+
+###### Most Popular by Decade
+
+Because i feel like **the decade as a whole has a big impact on the popularity of a genre**, and because this is my second time calculating the decades i will add a column to the data-set to assign each game to a decade.
+
+```{r}
+
+# Create a new column for Decade
+data <- data %>%
+  mutate(Decade = as.numeric(substr(format(Release.Date, "%Y"), 1, 3)) * 10)
+
+```
+
+Now we can take a look at the **what genre was most popular in each decade**. I will determine the most popular genre by the number of games released in that genre that decade.
+
+I swear every second game is listed as adventure so looking at this would be pointless, so i will remove the genre from the data-set and re-calculate the most popular genre for each decade without the 'Adventure' genre.
+
+```{r}
+
+# Split genres into multiple rows to count them individually
+data_genres <- data %>% 
+  separate_rows(Genres, sep = ", ") %>%
+  mutate(Genres = gsub("\\[|\\]|'", "", Genres)) %>%
+  filter(Genres != "" & Genres != "Adventure")  # Remove 'Adventure'
+
+# Count number of games per genre per decade
+popular_genres_by_decade <- data_genres %>%
+  group_by(Decade, Genres) %>%
+  summarise(Count = n(), Average_Rating = mean(Rating, na.rm = TRUE)) %>%
+  arrange(desc(Count))
+
+# Determine the most popular genre for each decade by count
+most_popular_genres <- popular_genres_by_decade %>%
+  group_by(Decade) %>%
+  top_n(1, Count)
+
+# Print results
+print(most_popular_genres)
+
+```
+
+**1980s - 1990s Dominated by Platformers**
+
+The high count of platform games during this era coincides with the **golden age of consoles** like SNES and Sega Genesis, which excelled in platform titles.\
+Platform games were more popular in earlier decades, but with the rise of 3D and open-world games, the genre has declined in popularity. The decline in the number of platform games produced each decade is most likely due to the changing preferences of gamers and advancements in technology.
+
+**2000s - 2020s Dominated by RPG's**
+
+RPG's have been the most prevalent genre from the 2000s through the 2020s, being the most produced genre each decade. The consistent ratings of RPG's over the years **suggest that the genre has sustained popularity and quality**.
+
+###### Predicting the Future
+
+With RPG's being the most popular genre in recent years, **it is likely that the trend will continue** into the future. The consistent production and high ratings of RPG's suggest that the genre will remain popular among gamers. However, from personal experience, i can say that the genre is becoming quite boring and repetitive, so i would expect a decline in the genre in the next few years. We can see examples of this with games like Star-field who failed to innovate and were not well received by critics or players.
+
+From what i have seen so far, **its fairly evident that the technology of the time has a big impact on the popularity of a genre**.\
+Even so, the rise of VR did not affect the game market as much as other technologies, so it will be interesting to see what the future holds for the industry.
 
 #### Dev Team Analysis
 
--   List of top developers, ordered by ratings of games they developed
--   Developer with the most games
--   Developer with the highest average rating
--   What developer was most popular in each time period? What were they making more of? what was getting the highest ratings?
+Next we will take a look at the development teams with the highest average ratings and teams that have produced the most games.
 
-##### Visualizations
+```{r}
 
--   **Top Developers by Rating**: Bar graph displaying the average rating for each development team, with teams on the x-axis and average rating on the y-axis.
+# Calculate the average rating for each developer
+average_ratings_by_dev <- data %>%
+  separate_rows(Team, sep = ", ") %>%
+  mutate(Team = gsub("\\[|\\]|'", "", Team)) %>%
+  filter(Team != "") %>%
+  group_by(Team) %>%
+  summarise(Average_Rating = mean(Rating, na.rm = TRUE),
+            Game_Count = n()) %>%
+  arrange(desc(Average_Rating), desc(Game_Count))
 
--   **Developers Over Time**: Stacked bar graph (histogram) showing developer activity over time, with the x-axis as the release date and the y-axis as the proportion of games by each team
+# Print the top 10 developers by average rating and game count.
+print(head(average_ratings_by_dev, 10))
 
-## Conclusion
+# Re-arrange by the highest game count
+average_ratings_by_dev <- average_ratings_by_dev %>% arrange(desc(Game_Count))
+
+# Print the top 10 developers with the most games
+print(head(average_ratings_by_dev, 10))
+
+```
+
+###### Top Developers by Average Rating
+
+These developers have the highest average ratings, with values all above 4.5, But the number of games they have produced is either 1 or 2, so **other teams with a higher game count will most likely have a lower average rating**. Still, the games these developers have produced are highly rated, so they are worth looking into.\
+Games like 'Disco Elysium' made by ZA/UM are considered some of the best games of all time, demonstrating that **meticulous attention to detail and innovative game play can lead to critical acclaim**.
+
+###### Developers with the Most Games
+
+These developers have produced the most games in the data-set, with counts ranging from 26 to 516. The average ratings of these developers are lower than the top developers by average rating, but despite the volume of games produced, they still have maintain relatively high ratings indicating that they are consistently producing decent games.\
+**Each of these teams are Industry giants**, being some of the most well known and respected developers in the industry, so it's no surprise that they have produced a large number of games given their resources and experience.\
+These teams have innovated and set the standard for game development, with many of their games being considered classics. Each of these teams almost sticks to or has a genre they are known for, this isn't to say they don't make other types of games, but they are generally known for a specific genre and it seems to be working for them. **Most of these teams define the genre they are known for**, setting expectations for other developers in the industry.
+
+With the sheer amount of games Nintendo has produced, it's surprising that they have maintained such a high average rating. This is a testament to the quality and consistency of their games, showing that even at such a large scale, they are able to produce high-quality content.
+
+```{r}
+
+# Filter to the top 20 teams by game count
+top_20_teams <- average_ratings_by_dev %>% 
+  top_n(20, Game_Count) %>% 
+  arrange(desc(Game_Count))
+
+# Bar graph showing game count by developer for the top 20 teams
+ggplot(top_20_teams, aes(x = reorder(Team, Game_Count), y = Game_Count)) + 
+  geom_bar(stat = "identity", fill = wes_palette("Royal1")[4]) + 
+  labs(title = "Game Count by Developer (Top 20)", x = "Developer Team", y = "Game Count") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10))
+
+```
+
+#### Release Date Analysis
+
+Finally, we will take a look at the Release Date feature to see if there are any trends or patterns in the data.\
+Because this data-set was collected in 2023 the data for 2023 is incomplete, so i will remove it from the data-set before plotting the graph.
+
+```{r}
+
+# Ensure the Year column is created
+data <- data %>% 
+  mutate(Year = format(Release.Date, "%Y"))
+
+# Filter out games released in 2023
+data <- data %>%
+  filter(format(Release.Date, "%Y") != "2023")
+
+# Plot the number of game releases per year
+releases_per_year <- data %>%
+  group_by(Year) %>%
+  summarise(Count = n())
+
+ggplot(releases_per_year, aes(x = Year, y = Count, group = 1)) + 
+  geom_line(color = wes_palette("Royal1")[4]) + 
+  geom_point(color = wes_palette("Royal1")[3]) + 
+  labs(title = "Number of Game Releases Per Year", x = "Year", y = "Number of Releases") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+###### Industry Growth
+
+Along with the growth of the video game industry, **we can see a steady increase** in the number of games released each year. The data-set shows a significant increase in the number of games released in the 2000s, which coincides with the rise of indie game dev and digital distribution platforms like Steam.
+
+In the last few years, the number of games released per year has spiked significantly, which i feel could be due to the ease of game development and the rise of indie developers.
+
+This data is showing us a representation of the growth of the industry, growing from a few games a year in the 80s to hundreds of games a year in the 2020s, And this data-set is only around 1000 games, so the actual number of games released each year is much higher, but it still gives us a good idea of the growth rate.
+
+#### Answering the questions
+
+**What has been the most popular genre for each decade?**
+
+-   The most popular genre for each decade is as follows:\
+    **1980s:** Platform\
+    **1990s:** Platform \
+    **2000s:** RPG \
+    **2010s:** RPG \
+    **2020s:** RPG
+
+**Is there a pattern or trend in the most popular game genre over time?, if so can i predict the popular genres for next year?**
+
+-   RPG's have been the most popular genre in recent years, with a consistent number of games produced each decade and high average ratings. **The trend suggests that RPG's will continue to be popular in the future**, but it's possible that the genre may become over-saturated and decline in popularity.
+
+**Are there any dev teams that consistently produce highly rated games?**
+
+-   There are several smaller development teams that have produced highly rated games, with average ratings above 4.5. These teams have produced a small number of games, but each game has been highly rated, indicating a focus on quality over quantity. Other larger teams with a higher game count have maintained relatively high ratings, showing that they are consistently producing decent games.
+
+-   **Great Small Dev Teams.**\
+    **ZA/UM:** Known for 'Disco Elysium'\
+    **Bay 12 Games:** Known for 'Dwarf Fortress'
+
+-   **Industry Giants.\
+    Nintendo:** Famous for platformers.\
+    **Capcom:** Famous for fighting games.\
+    **Square Enix:** Famous for RPG's.\
+    **Electronic Arts:** Famous for sports games.\
+    **Ubisoft:** Famous for open-world games.
+
+Taking a look at the development and design process of any of these teams **would provide great insights** into what makes a great game in their respective genres.
+
+### Conclusion
 
 #### Key Findings
 
--   Summarize the overall findings of your analysis.
+-   **Ratings:** Most games score between 3.4 and 4.0, indicating a high overall quality. However, examining outliers reveals interesting details about what makes a game particularly good or bad.
 
--   Highlight the most significant insights or patterns discovered.
+-   **Genre Trends:** The dominance of RPG's since the 2000s and the earlier popularity of platformers highlight how technological advancements and player preferences evolve over time.
 
--   Reflect on what these findings mean in the context of the video game industry.
+-   **Development Teams:** Smaller teams with fewer games often have higher ratings due to focused quality. Industry giants maintain high ratings despite large volumes, showcasing their consistent production standards.
 
 #### Potential Implications
 
--   List the main trends identified (e.g., “Ratings have generally improved over time”).
+-   **Technological Impact:** As technology advances, it enables more complex and engaging games, which is reflected in higher ratings and the popularity of genres like RPG's.
 
--   Point out any surprising or unexpected results (e.g., “Certain genres have consistently low ratings despite popularity”).
+-   **Market Growth:** The increasing number of game releases each year indicates a rapidly growing industry, bolstered by indie developers and digital distribution platforms.
 
--   Mention any notable correlations (e.g., “Games developed by top teams often receive higher ratings”).
+-   **Genre Saturation:** While RPG's are currently dominant, the potential for over-saturation could see a shift in popular genres in the coming years, driven by innovation and player fatigue.
 
 #### Future Research Directions
 
--   Discuss what these findings might imply for the future of video game development.
+-   **User vs. Critic Ratings:** Exploring discrepancies between user and critic ratings could offer deeper insights into game reception and areas for improvement.
 
--   Consider how the industry might respond to these trends (e.g., “An increase in certain genres could lead to more diverse game offerings”).
+-   **Game Sales vs. Ratings:** Analyzing the relationship between game sales and ratings could provide a more comprehensive view of a game's success and market impact.
 
--   Explore how these insights could impact players, developers, and publishers.
+-   **Impact of Sequels:** Investigating how sequels perform compared to original titles could reveal trends in franchise longevity and player loyalty.
