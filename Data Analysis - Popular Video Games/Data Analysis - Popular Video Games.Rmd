@@ -1,0 +1,369 @@
+---
+title: "Foster Rae, An Analysis of Popular Video Games (1980 - 2023)"
+output: html_notebook
+---
+
+## Introduction
+
+In this analysis, we will explore trends and insights from the data-set "Popular Video Games 1980 - 2023." We aim to uncover patterns and answer key questions about the video game industry.
+
+#### About the Data-set
+
+This data-set contains information about popular video games from 1980 to 2023. It was obtained by scraping data from the website [backloggd](https://www.backloggd.com).
+
+The data-set contains **over** **1000** **unique** **video** **games**, each with various attributes. It includes 14 columns of data, such as the title, rating, release date, genres, etc.
+
+#### Data-set Citation
+
+randomarnab. (2023). Popular Video Games 1980 - 2023. Retrieved from <https://www.kaggle.com/datasets/arnabchaki/popular-video-games-1980-2023/data>
+
+### Libraries
+
+```{r}
+
+# Install the tidyverse package.
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse")
+}
+
+# Install the Wes Anderson R color palette package.
+if (!requireNamespace("wesanderson", quietly = TRUE)) {
+  install.packages("wesanderson")
+}
+
+# Load packages and suppress start up messages.
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(wesanderson))
+
+```
+
+### Loading & Cleaning the Data
+
+```{r}
+
+# Importing the data-set
+data <- read.csv("data/games.csv")
+
+```
+
+I would show the head() of the data-set to give a brief overview but, there are 'Summary' and 'Review' columns that are absolutely filled with text and printing them would fill the entire screen.
+
+So before taking a look we will **remove** **both** **columns** as they are not needed for this analysis.
+
+-   **'Review'** : contains user written reviews.
+-   **'Summary'** : contains a summary of the game.
+
+There are also a few columns of data that track metrics from the website that i feel will not represent an accurate picture of the game's popularity.\
+I feel like these are more a reflection of the website's popularity rather than the game's so they will also be removed.
+
+-   **'Times.Listed'** : The number of times the game has been listed on the website.
+-   **'Plays'** : The number of times the game has been played.
+-   **'Playing'** : The number of users currently playing the game.
+-   **'Backlogs'** : The number of users who have the game in their backlog.
+
+```{r}
+
+# Remove the 'Summary' and 'Review' columns
+data <- data %>%
+    select(-c(Summary, Reviews))
+
+# Remove the 'Times.Listed', 'Plays', 'Playing', and 'Backlogs' columns
+data <- data %>%
+    select(-c(Times.Listed, Plays, Playing, Backlogs))
+
+```
+
+#### First Looks
+
+After tidying up a bit, we can now take a look at the **head** (first 6 rows) of the data-set to get a better understanding of what we are working with.
+
+```{r}
+
+# Rearrange columns to make it easier to read.
+data <- data %>% select(Title, Rating, Release.Date, Genres, Team, Number.of.Reviews, Wishlist, X)
+
+# Display the head of the data-set.
+print(head(data))
+
+```
+
+We are left with eight features (columns) to describe a single video game.
+
+***Data Frame Layout***
+
+|  |  |  |  |  |  |  |
+|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| **Title** *\<chr\>* | **Rating** *\<dbl\>* | **Release Date** *\<chr\>* | **Genres** *\<chr\>* | **Team** *\<chr\>* | **Number of Reviews** *\<chr\>* | **Wishlist** *\<chr\>* |
+
+These features will offer some great insights, but all of the data is in a character format, even values that should be numbers. We will need to convert some of the columns to a more appropriate format for analysis.
+
+-   Date of release to date format.
+
+-   Number of Reviews to integer format.
+
+-   Wishlist to integer Format.
+
+#### Data Conversions
+
+```{r}
+
+# Function to convert a column to numeric with a 'k' suffix.
+convert_to_number <- function(value) {
+  value <- trimws(value)  # Remove any leading/trailing white space
+  if (grepl("K", value)) {
+    # Remove the 'K' suffix and keep the period for decimal point
+    value <- as.numeric(sub("K", "", value)) * 1000
+  } else {
+    # Convert to numeric directly
+    value <- as.numeric(value)
+  }
+  return(value)
+}
+
+
+# Convert the 'Number.of.Reviews' column to numeric.
+data$Number.of.Reviews <- sapply(data$Number.of.Reviews, convert_to_number)
+
+# Convert the 'Wishlist' column to numeric.
+data$Wishlist <- sapply(data$Wishlist, convert_to_number)
+
+# Convert the 'Release.Date' column to a date format.
+data$Release.Date <- as.Date(data$Release.Date, format = "%b %d, %Y")
+
+
+```
+
+#### Checking for Duplicate Samples & Invalid or Missing Values
+
+Before any sort of real analysis, we will have a look to see if there are any missing or weird values in the data-set and handle them.
+
+Things like a negative rating or a release date in the future or the same video games listed twice.
+
+##### Duplicate samples
+
+```{r}
+
+# Remove duplicate samples
+data <- data %>%
+    filter(!duplicated(Title))
+
+```
+
+##### Missing Values
+
+```{r}
+
+# Check for missing values
+na_counts <- colSums(is.na(data))
+
+# Filter for columns with NA values
+na_cols <- na_counts[na_counts > 0]
+
+if (length(na_cols) == 0) {
+  print("No NA values present in any columns.")
+} else {
+  # Print NA counts
+  for (col in names(na_cols)) {
+    print(paste(col, ":", na_cols[col]))
+  }
+}
+
+# Free up memory
+rm(na_counts, na_cols)
+
+```
+
+After our check, we can see that 13 values in the 'Rating' col and 3 cols in the 'Release.Date' col are NA, compared to our over 1000 samples this is a pretty small part of the data, so we should be able to just remove any samples with NA values and still have a decent sized data set.
+
+```{r}
+
+# Remove samples with NA values
+data <- data %>%
+    drop_na()
+
+# Check NA values again
+na_counts <- colSums(is.na(data))
+
+# Filter for columns with NA values
+na_cols <- na_counts[na_counts > 0]
+
+if (length(na_cols) == 0) {
+  print("No NA values present in any columns.")
+} else {
+  # Print NA counts
+  for (col in names(na_cols)) {
+    print(paste(col, ":", na_cols[col]))
+  }
+}
+
+# Free up memory
+rm(na_counts, na_cols)
+
+```
+
+We are still left with a data set of over 1000 samples after removing any NA values which is great.
+
+##### Invalid Values
+
+```{r}
+
+# Check for rating values that are less than 0 or greater than 100
+invalid_ratings <- data %>%
+  filter(Rating < 0 | Rating > 100)
+
+# Check for release dates that are in the future
+future_dates <- data %>%
+  filter(Release.Date > Sys.Date())
+
+# Check for games with a rating and no reviews
+no_reviews <- data %>%
+  filter(Number.of.Reviews == 0)
+
+# Check if there are no invalid values in any columns
+if (nrow(invalid_ratings) == 0 && nrow(future_dates) == 0 && nrow(no_reviews) == 0) {
+  print("No invalid values present in any columns.")
+} else {
+  print(paste("Invalid Ratings:", nrow(Invalid_ratings)))
+  print(paste("Release Dates in the future:", nrow(future_dates)))
+  print(paste("Games with a rating and no reviews:", nrow(no_reviews)))
+}
+
+# Free up memory
+rm(invalid_ratings, future_dates, no_reviews)
+
+```
+
+After all our checks and cleaning, the data set is now ready for some analysis.
+
+## Data Exploration
+
+First we will take a look at the summary of our data.
+
+```{r}
+
+summary(data)
+
+```
+
+-   **Rating**: Ranging from 0.7 to 4.6, with a mean of 3.653. Ratings seem relatively high on average.
+-   **Release Date**: Earliest release date is 1980-05-22 and the most recent is 2023-03-17.
+-   **Number of Reviews**: Ranges widely from 8 to 4300, with a mean of 612.3.
+-   **Wishlist**: Ranges from 2 to 4800, indicating varied interest levels.
+
+#### Ratings Visualizations
+
+```{r}
+
+# Create a histogram of the ratings distribution
+ggplot(data, aes(x = Rating)) +
+  geom_histogram(binwidth = 1, fill = wes_palette("Royal1")[4], color = wes_palette("Royal1")[1]) +
+  labs(title = "Distribution of Ratings Histogram", x = "Rating", y = "Frequency") +
+  scale_x_continuous()
+
+```
+
+-   We can see that most games get a rating of 3 - 4.
+
+-   We may be able to gain some insights into what makes a game good or bad by looking at the outliers on either side of the peak here.
+
+```{r}
+
+# Create a box plot of the ratings distribution
+ggplot(data, aes(y = Rating)) +
+  geom_boxplot(fill = wes_palette("Royal1")[4], color = wes_palette("Royal1")[1]) +
+  labs(title = "Distribution of Ratings Box Plot", x = "", y = "Rating") +
+  scale_y_continuous()
+
+```
+
+-   Most ratings cluster around the central value definitely highlighting a consistent rating of about 3.4 to 4.0. for most games.
+
+-   The narrow interquartile range also suggests that most games are rated similarly.
+
+-   The points/outliers on the box plot are all games with ratings below 2.0, these could be interesting to look at.
+
+###### Ratings Visualizations Conclusion
+
+From our box and histogram plots we can see that most games are rated between 3.4 and 4.0, with a few outliers below 2.0. We can take a closer look at these games to see if there are any commonalities to find out why they are rated so low.
+
+#### Trends Over Time
+
+```{r}
+
+# Calculate the average ratings over the years
+ratings_over_years <- data %>%
+  mutate(Year = format(Release.Date, "%Y")) %>%
+  group_by(Year) %>%
+  summarise(Average_Rating = mean(Rating, na.rm = TRUE))
+
+# Plot the average ratings over the years
+ggplot(ratings_over_years, aes(x = Year, y = Average_Rating, group = 1)) +
+  geom_line(color = wes_palette("Royal1")[4]) +
+  geom_point(color = wes_palette("Royal1")[3]) +
+  labs(title = "Average Ratings Over the Years", x = "Year", y = "Average Rating")+
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+-   Analysis of ratings over the years
+
+-   Trends in the number of reviews More reviews = more popular?
+
+##### Visualizations
+
+**Ratings Over Years**: Line graph showing how video game ratings change over time, with the x-axis as the release date and the y-axis as the ratings.
+
+**Number of Reviews Over Time**: Line graph highlighting the number of reviews over the years, with the x-axis as the release date and the y-axis as the number of reviews.
+
+#### Genre Analysis
+
+-   List of top genres, ordered by ratings of games in the genre
+-   Genre with the most games
+-   Genre with the highest average rating
+-   What genre was most popular in each time period? What were they making more of? what was getting the highest ratings?
+
+##### Visualizations
+
+-   **Top Genres by Rating**: Bar graph depicting the average rating for each genre, with genres on the x-axis and average rating on the y-axis.
+
+-   **Genres Over Time**: Stacked bar graph (histogram) showing the popularity of each genre over time, with the x-axis as the release date and the y-axis as the proportion of each genre
+
+#### Dev Team Analysis
+
+-   List of top developers, ordered by ratings of games they developed
+-   Developer with the most games
+-   Developer with the highest average rating
+-   What developer was most popular in each time period? What were they making more of? what was getting the highest ratings?
+
+##### Visualizations
+
+-   **Top Developers by Rating**: Bar graph displaying the average rating for each development team, with teams on the x-axis and average rating on the y-axis.
+
+-   **Developers Over Time**: Stacked bar graph (histogram) showing developer activity over time, with the x-axis as the release date and the y-axis as the proportion of games by each team
+
+## Conclusion
+
+#### Key Findings
+
+-   Summarize the overall findings of your analysis.
+
+-   Highlight the most significant insights or patterns discovered.
+
+-   Reflect on what these findings mean in the context of the video game industry.
+
+#### Potential Implications
+
+-   List the main trends identified (e.g., “Ratings have generally improved over time”).
+
+-   Point out any surprising or unexpected results (e.g., “Certain genres have consistently low ratings despite popularity”).
+
+-   Mention any notable correlations (e.g., “Games developed by top teams often receive higher ratings”).
+
+#### Future Research Directions
+
+-   Discuss what these findings might imply for the future of video game development.
+
+-   Consider how the industry might respond to these trends (e.g., “An increase in certain genres could lead to more diverse game offerings”).
+
+-   Explore how these insights could impact players, developers, and publishers.
